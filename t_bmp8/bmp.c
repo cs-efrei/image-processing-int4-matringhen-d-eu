@@ -22,10 +22,69 @@ t_bmp8 * bmp8_loadImage(const char * filename){
     img->colorDepth= *(unsigned int *)&img->header[28];
     img->dataSize= *(unsigned int *)&img->header[34];
 
-    img->data
+    fread(img->colorTable, 1, 1024, file);
+
+    img->data = (unsigned char *)malloc(img->dataSize);
+    if (!img->data) {
+        free(img);
+        fclose(file);
+        perror("There were an issue allocating memory for the image data");
+        return NULL;
+    }
+    fread(img->data, 1, img->dataSize, file);
+    fclose(file);
+    return img;
 
 }
 
-t_bmp8 * bmp8_saveImage(const char * filename, t_bmp8 * img){
-    
+void bmp8_saveImage(const char * filename, t_bmp8 * img){
+    FILE *file = fopen(filename, "wb");
+    if (!file) {
+        perror("There where an error opening file");
+        return;
+    }
+    fwrite(img->header, 1, 54, file);
+    fwrite(img->colorTable, 1, 1024, file);
+    fwrite(img->data, 1, img->dataSize, file);
+    fclose(file);
+    return;
 }
+
+void bmp8_free(t_bmp8 * img){
+    if (img) {
+        if (img->data) {
+            free(img->data);
+        }
+        free(img);
+    }
+}
+
+void bmp8_printInfo(t_bmp8 * img){
+    if (img) {
+        printf("Image Information:\n");
+        printf("Width: %u\n", img->width);
+        printf("Height: %u\n", img->height);
+        printf("Color Depth: %u\n", img->colorDepth);
+        printf("Data Size: %u\n", img->dataSize);
+    } else {
+        printf("Image is NULL\n");
+    }
+}
+
+
+// IMAGE PROCESSING FUNCTIONS
+
+
+void bmp8_negative(t_bmp8 * img){
+    if (img) {
+        for (unsigned int i = 0; i < img->dataSize; i++) {
+            img->data[i] = 255 - img->data[i];
+        }
+    }
+}
+
+
+
+//testing
+
+// Load the image and store the result in a variable

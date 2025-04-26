@@ -50,3 +50,5 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+t_bmp8/cv2_negative.bmp
+t_bmp8/cv2.bmp
