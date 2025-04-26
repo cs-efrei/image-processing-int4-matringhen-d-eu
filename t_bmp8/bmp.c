@@ -83,8 +83,46 @@ void bmp8_negative(t_bmp8 * img){
     }
 }
 
+void bmp8_brightness(t_bmp8 *img, int value){
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        int newValue = img->data[i] + value;
+        if (newValue > 255) {
+            newValue = 255;
+        } else if (newValue < 0) {
+            newValue = 0;
+        }
+        img->data[i] = newValue;
+    }
+}
+
+void bmp8_threshold(t_bmp8 *img, int threshold){
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        img->data[i] = (img->data[i] > threshold) ? 255 : 0;
+    }
+}
 
 
-//testing
+void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
+    int n = kernelSize / 2;
+    unsigned char *newData = (unsigned char *)malloc(img->dataSize);
+    if (!newData) {
+        perror("Error allocating memory for new image data");
+        return;
+    }
 
-// Load the image and store the result in a variable
+    for (int y = 1; y < img->height - 1; y++) {
+        for (int x = 1; x < img->width - 1; x++) {
+            int sum = 0;
+            for (int i = -n; i <= n; i++) {
+                for (int j = -n; j <= n; j++) {
+                    sum += img->data[(y + i) * img->width + (x + j)] * kernel[i + n][j + n];
+                }
+            }
+            newData[y * img->width + x] = (unsigned char)sum;
+        }
+    }
+
+    // Copy the new data back to the original image
+    memcpy(img->data, newData, img->dataSize);
+    free(newData);
+}
