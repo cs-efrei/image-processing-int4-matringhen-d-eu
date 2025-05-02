@@ -4,18 +4,23 @@
 int main(){
     int val = load_menu();
 switch (val) {
-////////////////////////////////////////////
         case 1:
             printf("We will need you to say if it is a bmp8 or bmp24. (1 or 2)\n");
-        scanf("%d",&val);
-        printf(">>> Your choice : %d \n,val");
-     ///////
+            scanf("%d",&val);
+            printf(">>> Your choice : %d \n,val");
         if (val == 1) {
-            print("bmp8\n");
+            print("bmp8...\n");
+            print("Please assure your file is in the following path : c-imagery_main/t_bmp8/\n");
+            print("Please input your file name (don't forget .bmp) :\n");
+            scanf("%20s",name); // [20 char is sufficient including .bmp
+            t_bmp8 *img = bmp8_loadImage(name);
         }
-    ////////
         else{
-            print("bmp24\n");
+            print("bmp24...\n");
+            print("Please assure your file is in the following path : c-imagery_main/t_bmp24/\n");
+            print("Please input your file name (don't forget .bmp) :\n");
+            scanf("%20s",name); // [20 char is sufficient including .bmp
+            t_bmp24 *image = bmp24_loadImage(name);
         }
         break;
 ////////////////////////////////////////////
