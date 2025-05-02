@@ -12,14 +12,14 @@ switch (val) {
             print("bmp8...\n");
             print("Please assure your file is in the following path : c-imagery_main/t_bmp8/\n");
             print("Please input your file name (don't forget .bmp) :\n");
-            scanf("%20s",name); // [20 char is sufficient including .bmp
+            scanf("%20s",name); // [20 char is sufficient including .bmp]
             t_bmp8 *img = bmp8_loadImage(name);
         }
         else{
             print("bmp24...\n");
             print("Please assure your file is in the following path : c-imagery_main/t_bmp24/\n");
             print("Please input your file name (don't forget .bmp) :\n");
-            scanf("%20s",name); // [20 char is sufficient including .bmp
+            scanf("%20s",name); // [20 char is sufficient including .bmp]
             t_bmp24 *image = bmp24_loadImage(name);
         }
         break;
