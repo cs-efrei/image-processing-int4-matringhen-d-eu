@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include "launcher_func.h"
-
+#include "t_bmp8/bmc.h"
+#include "t_bmp24/bmc.h"
 int main(){
+    char name[21];
     int val = load_menu();
 switch (val) {
         case 1:
@@ -9,18 +11,18 @@ switch (val) {
             scanf("%d",&val);
             printf(">>> Your choice : %d \n,val");
         if (val == 1) {
-            print("bmp8...\n");
-            print("Please assure your file is in the following path : c-imagery_main/t_bmp8/\n");
-            print("Please input your file name (don't forget .bmp) :\n");
+            printf("bmp8...\n");
+            printf("Please assure your file is in the following path : c-imagery_main/t_bmp8/\n");
+            printf("Please input your file name (don't forget .bmp) :\n");
             scanf("%20s",name); // [20 char is sufficient including .bmp]
-            t_bmp8 *img = bmp8_loadImage(name);
+            t_bmp8 * img8 = bmp8_loadImage(name);
         }
         else{
-            print("bmp24...\n");
-            print("Please assure your file is in the following path : c-imagery_main/t_bmp24/\n");
-            print("Please input your file name (don't forget .bmp) :\n");
+            printf("bmp24...\n");
+            printf("Please assure your file is in the following path : c-imagery_main/t_bmp24/\n");
+            printf("Please input your file name (don't forget .bmp) :\n");
             scanf("%20s",name); // [20 char is sufficient including .bmp]
-            t_bmp24 *image = bmp24_loadImage(name);
+            t_bmp24 * img24 = bmp24_loadImage(name);
         }
         break;
 ////////////////////////////////////////////

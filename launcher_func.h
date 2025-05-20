@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include "launcher_func.h"
+#ifndef LAUNCHER_FUNC_H
+#define LAUNCHER_FUNC_H
 
 int load_menu();
+
+#endif // LAUNCHER_FUNC_H
