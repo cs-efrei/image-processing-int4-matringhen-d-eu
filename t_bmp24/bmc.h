@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <stdint.h>
 // 21/04/2025
 // main
@@ -83,11 +82,11 @@ void bmp24_writePixelValue(t_bmp24 *image, int x, int y, FILE *file);
 void bmp24_writePixelData(t_bmp24 *image, FILE *file);
 /////////////////////////////////////////////////////////////////////// 2.4 ^^ need these
 t_bmp24 * bmp24_loadImage (const char * filename);
-void bmp24_saveImage (t_bmp8 * img, const char * filename);
+void bmp24_saveImage (t_bmp24 * img, const char * filename);
 /////////////////////////////////////////////////////////////////////// 2.5
-void bmp24_negative (t_bmp8 * img);
-void bmp24_grayscale (t_bmp8 * img);
-void bmp24_brightness (t_bmp8 * img, int value);
+void bmp24_negative (t_bmp24 * img);
+void bmp24_grayscale (t_bmp24 * img);
+void bmp24_brightness (t_bmp24* img, int value);
  /////////////////////////////////////////////////////////////////////// 2.6
 t_pixel bmp24_convolution(t_bmp24 *img, int x, int y, float **kernel, int kernelSize);
 void bmp24_boxBlur(t_bmp24 *img);
