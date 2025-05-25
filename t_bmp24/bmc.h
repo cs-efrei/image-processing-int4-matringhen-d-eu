@@ -4,6 +4,7 @@
 // main
 
 // for header
+#pragma pack(push, 1) // Ensure 1-byte alignment
 typedef struct {
     uint16_t type;
     uint32_t size;
@@ -26,6 +27,7 @@ typedef struct {
     uint32_t ncolors;
     uint32_t importantcolors;
 } t_bmp_info;
+#pragma pack(pop) // Restore previous alignment
 
 // single pixel
 typedef struct {
@@ -93,5 +95,6 @@ void bmp24_boxBlur(t_bmp24 *img);
 void bmp24_gaussianBlur(t_bmp24 *img);
 void bmp24_outline(t_bmp24 *img);
 void bmp24_emboss(t_bmp24 *img);
+void bmp24_printInfo(t_bmp24 *img);
 
 // 27/04/2025

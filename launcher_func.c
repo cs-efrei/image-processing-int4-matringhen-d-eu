@@ -9,7 +9,7 @@ int load_menu(){
   printf("  4. Display image information\n");
   printf("  5. Quit\n");
 
-  scanf("%d",&val);
-  printf(">>> Your choice : %d \n,val");
+  scanf("%d", &val);
+  printf(">>> Your choice : %d \n", val);
   return val;
 }

@@ -1,4 +1,6 @@
 #include "bmc.h"
+#include <string.h>
+#include <stdio.h>
 
 t_bmp8 * bmp8_loadImage(const char * filename){
     FILE *file= fopen(filename, "rb");
@@ -20,7 +22,7 @@ t_bmp8 * bmp8_loadImage(const char * filename){
     img->width = *(unsigned int *)&img->header[18];
     img->height= *(unsigned int *)&img->header[22];
     img->colorDepth= *(unsigned int *)&img->header[28];
-    img->dataSize= *(unsigned int *)&img->header[34];
+    img->dataSize = img->width * img->height * (img->colorDepth / 8);
 
     fread(img->colorTable, 1, 1024, file);
 

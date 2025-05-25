@@ -1,4 +1,6 @@
 #include "bmc.h"
+#include <stdio.h>
+#include <stdlib.h>
 ///////////////////////////////////////////////////////////////////// 2.3
 t_pixel** bmp24_allocateDataPixels(int width, int height) {
     t_pixel** data = (t_pixel**)malloc(height * sizeof(t_pixel*));
@@ -16,6 +18,28 @@ t_pixel** bmp24_allocateDataPixels(int width, int height) {
         }
     }
     return data;
+}
+
+void bmp24_printInfo(t_bmp24 *img) {
+    if (!img) {
+        fprintf(stderr, "Invalid BMP image.\n");
+        return;
+    }
+
+    printf("BMP Image Information:\n");
+    printf("-----------------------\n");
+    printf("Width: %d pixels\n", img->width);
+    printf("Height: %d pixels\n", img->height);
+    printf("Color Depth: %d bits per pixel\n", img->colorDepth);
+    printf("File Size: %u bytes\n", img->header.size);
+    printf("Image Data Offset: %u bytes\n", img->header.offset);
+    printf("Compression: %u\n", img->header_info.compression);
+    printf("Image Size (raw data): %u bytes\n", img->header_info.imagesize);
+    printf("Horizontal Resolution: %d pixels/meter\n", img->header_info.xresolution);
+    printf("Vertical Resolution: %d pixels/meter\n", img->header_info.yresolution);
+    printf("Number of Colors: %u\n", img->header_info.ncolors);
+    printf("Important Colors: %u\n", img->header_info.importantcolors);
+    printf("-----------------------\n");
 }
 
 void bmp24_freeDataPixels(t_pixel **pixels, int height) {
@@ -82,6 +106,7 @@ void bmp24_readPixelValue(t_bmp24 *image, int x, int y, FILE *file) {
         return;
     }
     fread(&image->data[y][x], sizeof(t_pixel), 1, file);
+    //printf("Read pixel at (%d, %d): R=%d, G=%d, B=%d\n", x, y, image->data[y][x].red, image->data[y][x].green, image->data[y][x].blue);
 }
 void bmp24_readPixelData(t_bmp24 *image, FILE *file) {
     for (int y = 0; y < image->height; y++) {
@@ -121,7 +146,8 @@ t_bmp24* bmp24_loadImage(const char *filename) {
     file_rawRead(0, &header, sizeof(t_bmp_header), 1, file);
     // Read the BMP info header
     file_rawRead(sizeof(t_bmp_header), &header_info, sizeof(t_bmp_info), 1, file);
-
+    //printf("BMP Header: type=%d, size=%d, offset=%d\n", header.type, header.size, header.offset);
+    //printf("BMP Info: size=%d, width=%d, height=%d, bits=%d\n", header_info.size, header_info.width, header_info.height, header_info.bits);
     // Allocate the BMP structure based on width, height, and color depth
     t_bmp24 *bmp = bmp24_allocate(header_info.width, header_info.height, header_info.bits);
     if (!bmp) {
@@ -135,6 +161,8 @@ t_bmp24* bmp24_loadImage(const char *filename) {
 
     // Read pixel data
     bmp24_readPixelData(bmp, file);
+    printf("Pixel data read successfully.\n");
+
 
     fclose(file);
     return bmp;
@@ -224,105 +252,207 @@ t_pixel bmp24_convolution(t_bmp24 *img, int x, int y, float **kernel, int kernel
 
     return newPixel;
 }
-// BOX BLUR
-void bmp24_boxBlur(t_bmp24 *img) {
-    float kernel[3][3] = {
-        {1.0f / 9, 1.0f / 9, 1.0f / 9},
-        {1.0f / 9, 1.0f / 9, 1.0f / 9},
-        {1.0f / 9, 1.0f / 9, 1.0f / 9}
-    };
 
-    t_bmp24 *tempImg = bmp24_allocate(img->width, img->height, img->colorDepth);
+// Dynamically allocate a kernel with a given size
+float **allocateKernel(int kernelSize) {
+    float **kernel = (float **)malloc(kernelSize * sizeof(float *));
+    if (!kernel) {
+        fprintf(stderr, "Failed to allocate memory for kernel rows.\n");
+        return NULL;
+    }
 
-    for (int y = 0; y < img->height; y++) {
-        for (int x = 0; x < img->width; x++) {
-            tempImg->data[y][x] = bmp24_convolution(img, x, y, (float **)kernel, 3);
+    for (int i = 0; i < kernelSize; i++) {
+        kernel[i] = (float *)malloc(kernelSize * sizeof(float));
+        if (!kernel[i]) {
+            fprintf(stderr, "Failed to allocate memory for kernel row %d.\n", i);
+            // Free previously allocated rows
+            for (int j = 0; j < i; j++) {
+                free(kernel[j]);
+            }
+            free(kernel);
+            return NULL;
         }
     }
 
-    // Copy blurred image back to original
+    return kernel;
+}
+
+// Free the dynamically allocated kernel
+void freeKernel(float **kernel, int kernelSize) {
+    for (int i = 0; i < kernelSize; i++) {
+        free(kernel[i]);
+    }
+    free(kernel);
+}
+
+
+// BOX BLUR
+void bmp24_boxBlur(t_bmp24 *img) {
+    int kernelSize = 3;
+
+    // Allocate the kernel
+    float **kernel = allocateKernel(kernelSize);
+    if (!kernel) {
+        return;
+    }
+
+    // Initialize the kernel values (box blur kernel)
+    for (int i = 0; i < kernelSize; i++) {
+        for (int j = 0; j < kernelSize; j++) {
+            kernel[i][j] = 1.0f / (kernelSize * kernelSize);
+        }
+    }
+
+    // Allocate a temporary image for storing the blurred result
+    t_bmp24 *tempImg = bmp24_allocate(img->width, img->height, img->colorDepth);
+    // Apply the convolution using the kernel
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
+            tempImg->data[y][x] = bmp24_convolution(img, x, y, kernel, kernelSize);
+        }
+    }
+
+    // Copy the blurred image back to the original image
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
             img->data[y][x] = tempImg->data[y][x];
         }
     }
 
+    // Free resources
     bmp24_free(tempImg);
+    freeKernel(kernel, kernelSize);
 }
 // GAUSSIAN
 void bmp24_gaussianBlur(t_bmp24 *img) {
-    float kernel[5][5] = {
-        {1/273.0f, 4/273.0f, 6/273.0f, 4/273.0f, 1/273.0f},
-        {4/273.0f, 16/273.0f, 24/273.0f, 16/273.0f, 4/273.0f},
-        {6/273.0f, 24/273.0f, 36/273.0f, 24/273.0f, 6/273.0f},
-        {4/273.0f, 16/273.0f, 24/273.0f, 16/273.0f, 4/273.0f},
-        {1/273.0f, 4/273.0f, 6/273.0f, 4/273.0f, 1/273.0f}
+    int kernelSize = 5;
+
+    // Allocate the kernel
+    float **kernel = allocateKernel(kernelSize);
+    if (!kernel) {
+        return;
+    }
+
+    // Initialize the kernel values (Gaussian blur kernel)
+    float gaussianValues[5][5] = {
+        {1 / 273.0f, 4 / 273.0f, 7 / 273.0f, 4 / 273.0f, 1 / 273.0f},
+        {4 / 273.0f, 16 / 273.0f, 26 / 273.0f, 16 / 273.0f, 4 / 273.0f},
+        {7 / 273.0f, 26 / 273.0f, 41 / 273.0f, 26 / 273.0f, 7 / 273.0f},
+        {4 / 273.0f, 16 / 273.0f, 26 / 273.0f, 16 / 273.0f, 4 / 273.0f},
+        {1 / 273.0f, 4 / 273.0f, 7 / 273.0f, 4 / 273.0f, 1 / 273.0f}
     };
 
-    t_bmp24 *tempImg = bmp24_allocate(img->width, img->height, img->colorDepth);
-
-    for (int y = 0; y < img->height; y++) {
-        for (int x = 0; x < img->width; x++) {
-            tempImg->data[y][x] = bmp24_convolution(img, x, y, (float **)kernel, 5);
+    for (int i = 0; i < kernelSize; i++) {
+        for (int j = 0; j < kernelSize; j++) {
+            kernel[i][j] = gaussianValues[i][j];
         }
     }
 
-    // Copy blurred image back to original
+    // Allocate a temporary image for storing the blurred result
+    t_bmp24 *tempImg = bmp24_allocate(img->width, img->height, img->colorDepth);
+
+    // Apply the convolution using the kernel
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
+            tempImg->data[y][x] = bmp24_convolution(img, x, y, kernel, kernelSize);
+        }
+    }
+
+    // Copy the blurred image back to the original image
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
             img->data[y][x] = tempImg->data[y][x];
         }
     }
 
+    // Free resources
     bmp24_free(tempImg);
+    freeKernel(kernel, kernelSize);
 }
 // OUTLINE
 void bmp24_outline(t_bmp24 *img) {
-    float kernel[3][3] = {
+    int kernelSize = 3;
+
+    // Dynamically allocate the kernel
+    float **kernel = allocateKernel(kernelSize);
+    if (!kernel) {
+        return;
+    }
+
+    // Initialize the kernel values (outline kernel)
+    float outlineValues[3][3] = {
         {0, -1, 0},
         {-1, 5, -1},
         {0, -1, 0}
     };
 
-    t_bmp24 *tempImg = bmp24_allocate(img->width, img->height, img->colorDepth);
-
-    for (int y = 0; y < img->height; y++) {
-        for (int x = 0; x < img->width; x++) {
-            tempImg->data[y][x] = bmp24_convolution(img, x, y, (float **)kernel, 3);
+    for (int i = 0; i < kernelSize; i++) {
+        for (int j = 0; j < kernelSize; j++) {
+            kernel[i][j] = outlineValues[i][j];
         }
     }
 
-    // Copy outlined image back to original
+    // Allocate a temporary image for storing the outlined result
+    t_bmp24 *tempImg = bmp24_allocate(img->width, img->height, img->colorDepth);
+
+    // Apply the convolution using the kernel
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
+            tempImg->data[y][x] = bmp24_convolution(img, x, y, kernel, kernelSize);
+        }
+    }
+
+    // Copy the outlined image back to the original image
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
             img->data[y][x] = tempImg->data[y][x];
         }
     }
 
+    // Free resources
     bmp24_free(tempImg);
+    freeKernel(kernel, kernelSize);
 }
 // EMBROSS
 void bmp24_emboss(t_bmp24 *img) {
-    float kernel[3][3] = {
+    int kernelSize = 3;
+
+    // Dynamically allocate the kernel
+    float **kernel = allocateKernel(kernelSize);
+    if (!kernel) {
+        return;
+    }
+
+    // Initialize the kernel values (emboss kernel)
+    float embossValues[3][3] = {
         {-2, -1, 0},
         {-1,  1, 1},
         { 0,  1, 2}
     };
 
-    t_bmp24 *tempImg = bmp24_allocate(img->width, img->height, img->colorDepth);
-
-    for (int y = 0; y < img->height; y++) {
-        for (int x = 0; x < img->width; x++) {
-            tempImg->data[y][x] = bmp24_convolution(img, x, y, (float **)kernel, 3);
+    for (int i = 0; i < kernelSize; i++) {
+        for (int j = 0; j < kernelSize; j++) {
+            kernel[i][j] = embossValues[i][j];
         }
     }
 
-    // Copy embossed image back to original
+    // Allocate a temporary image for storing the embossed result
+    t_bmp24 *tempImg = bmp24_allocate(img->width, img->height, img->colorDepth);
+    // Apply the convolution using the kernel
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) {
+            tempImg->data[y][x] = bmp24_convolution(img, x, y, kernel, kernelSize);
+        }
+    }
+
+    // Copy the embossed image back to the original image
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
             img->data[y][x] = tempImg->data[y][x];
         }
     }
 
+    // Free resources
     bmp24_free(tempImg);
+    freeKernel(kernel, kernelSize);
 }
