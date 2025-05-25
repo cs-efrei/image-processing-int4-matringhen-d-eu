@@ -10,11 +10,7 @@ Reading, Saving & Editing of BMP 8 & BMP 24 images.
 Clone the repo:  
 `https://github.com/N-MTN/c-imagery`
 
-Compile the C file:  
-`gcc launcher.c -o launcher`
-
-Run the program:  
-`./launcher.c`
+The launcher does not work due to some issues. Please use tests codes located in each of the folders to test. 
 
 ## Author
 
